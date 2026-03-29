@@ -371,6 +371,38 @@ def plot_waveform(audio, sample_rate, is_fake):
     return fig
 
 
+def plot_mfcc(file_path, is_fake):
+    """
+    Return a matplotlib figure of the MFCC heatmap.
+    Colour map is red-tinted for fake, green-tinted for real.
+    """
+    try:
+        audio, sr = librosa.load(file_path, sr=22050, duration=5.0)
+    except Exception:
+        return None
+
+    mfccs = librosa.feature.mfcc(y=audio, sr=sr, n_mfcc=40)
+    cmap  = "RdPu" if is_fake else "GnBu"
+
+    fig, ax = plt.subplots(figsize=(9, 3.5))
+    fig.patch.set_facecolor("#0d1117")
+    ax.set_facecolor("#0d1117")
+
+    img = librosa.display.specshow(
+        mfccs, sr=sr, x_axis="time", ax=ax, cmap=cmap
+    )
+    fig.colorbar(img, ax=ax, format="%+.1f", label="Coefficient value")
+    ax.set_ylabel("MFCC Coefficient", color="#8b949e", fontsize=9)
+    ax.set_xlabel("Time (seconds)",   color="#8b949e", fontsize=9)
+    ax.tick_params(colors="#8b949e", labelsize=8)
+    for spine in ax.spines.values():
+        spine.set_color("#21262d")
+    ax.set_title("MFCC — Mel-Frequency Cepstral Coefficients",
+                 color="#c9d1d9", fontsize=10, pad=8)
+    plt.tight_layout()
+    return fig
+
+
 
 # ════════════════════════════════════════════════════════════
 #  SIDEBAR
@@ -560,6 +592,16 @@ if uploaded_file is not None:
                 fig_wave = plot_waveform(audio, sr, is_fake)
                 st.pyplot(fig_wave, use_container_width=True)
                 plt.close(fig_wave)
+
+                st.markdown("**🎛️ MFCC Heatmap**")
+                st.markdown(
+                    "MFCCs capture the voice's spectral fingerprint over time. "
+                    "AI-generated voices often show unnaturally uniform or repetitive patterns across coefficients."
+                )
+                fig_mfcc = plot_mfcc(tmp_path, is_fake)
+                if fig_mfcc:
+                    st.pyplot(fig_mfcc, use_container_width=True)
+                    plt.close(fig_mfcc)
 
                 # ── Technical details expander ────────────
                 with st.expander("🔧 Technical Details"):
